@@ -187,7 +187,9 @@ void SysTick_Handler(void){
 
 void bump_interrupt(void) {
     uint8_t bumpResult = Bump_Read();
-    if (bumpResult != 0x00) {
+    reflectance_data = Reflectance_Read(1000);
+    reflectance_posn = Reflectance_Position(reflectance_data);
+    if (bumpResult != 0x3F) {
 
         int backup_speed = 2500, backup_time = 300;
         Motor_Backward(backup_speed,backup_speed);
@@ -220,7 +222,7 @@ void main(void){
 //    initializeFSMTable();
     Clock_Init48MHz();
     LaunchPad_Init(); // built-in switches and LEDs
-    TimerA1_Init(&bump_interrupt,50000);  // 10 Hz
+    TimerA1_Init(&bump_interrupt,50000);
     EnableInterrupts();
     Bump_Init();      // bump switches
     Motor_Init();
@@ -232,10 +234,12 @@ void main(void){
 //    State currentState = CENTER;
 
     while(1){
+//        WaitForInterrupt();
         reflectance_data = Reflectance_Read(1000);
         reflectance_posn = Reflectance_Position(reflectance_data);
         Clock_Delay1ms(10);
 
+//        if (reflectance_data == 0b11111111 && reflectance_posn == 0) { // 2nd t-join
         if (reflectance_data == 0b11111111 && reflectance_posn == 0) { // 2nd t-join
             Motor_Right(2000,2000);
             Clock_Delay1ms(1500);
@@ -245,42 +249,50 @@ void main(void){
             Motor_Stop();
 //            processInput(&currentState, FINISH_INPUT);
         }
+//        else if (reflectance_posn > -47 && reflectance_posn < 47) { //center
         else if (reflectance_posn > -47 && reflectance_posn < 47) { //center
             Motor_Forward(speed,speed);
             Clock_Delay1ms(time3);
             Motor_Stop();
             //break;
 //            processInput(&currentState, CENTER_INPUT);
+//        } else if (reflectance_posn <= -47 && reflectance_posn > -142) { //slightly off to the left
         } else if (reflectance_posn <= -47 && reflectance_posn > -142) { //slightly off to the left
             Motor_Left(speed,speed);
             Clock_Delay1ms(time1);
             Motor_Stop();
 //            processInput(&currentState, SLIGHT_LEFT_INPUT);
+//        } else if (reflectance_posn >= 47 && reflectance_posn <142) { //slightly off to the right
         } else if (reflectance_posn >= 47 && reflectance_posn <142) { //slightly off to the right
             Motor_Right(speed,speed);
             Clock_Delay1ms(time1);
             Motor_Stop();
 //            processInput(&currentState, SLIGHT_RIGHT_INPUT);
+//        } else if (reflectance_posn <= -142 && reflectance_posn >-237) { //off to the left
         } else if (reflectance_posn <= -142 && reflectance_posn >-237) { //off to the left
             Motor_Left(speed,speed);
             Clock_Delay1ms(time2);
             Motor_Stop();
 //            processInput(&currentState, OFF_LEFT_INPUT);
+//        } else if (reflectance_posn >= 142 && reflectance_posn < 237) { // off to the right
         } else if (reflectance_posn >= 142 && reflectance_posn < 237) { // off to the right
             Motor_Right(speed,speed);
             Clock_Delay1ms(time2);
             Motor_Stop();
 //            processInput(&currentState, OFF_RIGHT_INPUT);
+//        } else if (reflectance_posn <= -237 && reflectance_posn > -332) { // way off left
         } else if (reflectance_posn <= -237 && reflectance_posn > -332) { // way off left
             Motor_Left(speed,speed);
             Clock_Delay1ms(time3);
             Motor_Stop();
 //            processInput(&currentState, WAY_OFF_LEFT_INPUT);
+//        } else if (reflectance_posn >= 237 && reflectance_posn < 332) { // way off right
         } else if (reflectance_posn >= 237 && reflectance_posn < 332) { // way off right
             Motor_Right(speed,speed);
             Clock_Delay1ms(time3);
             Motor_Stop();
 //            processInput(&currentState, WAY_OFF_RIGHT_INPUT);
+//        } else if (reflectance_data == 0b00000000 && reflectance_posn == 333) { // goal
         } else if (reflectance_data == 0b00000000 && reflectance_posn == 333) { // goal
             Motor_Stop();
             //break;

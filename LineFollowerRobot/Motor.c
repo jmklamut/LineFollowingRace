@@ -63,7 +63,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 // Input: none
 // Output: none
 void Motor_Init(void){
-   P3 -> SEL0 &= ~0xC0;
+    P3 -> SEL0 &= ~0xC0;
     P3 -> SEL1 &= ~0xC0;
     P3 -> DIR |= 0xC0;
 
@@ -83,7 +83,7 @@ void Motor_Init(void){
 // Input: none
 // Output: none
 void Motor_Stop(void){
-  P5->OUT &= ~0x30;
+    P5->OUT &= ~0x30;
     P2->OUT &= ~0xC0;   // off
     P3->OUT |= 0xC0;   // low current sleep mode
     PWM_Init34(15000, 0, 0);
@@ -99,7 +99,7 @@ void Motor_Stop(void){
 // Output: none
 // Assumes: Motor_Init() has been called
 void Motor_Forward(uint16_t leftDuty, uint16_t rightDuty){ 
-  P3 -> OUT |= 0xC0;  // nSleep = 1
+    P3 -> OUT |= 0xC0;  // nSleep = 1
     P5 -> OUT &= ~0x30; // PH = 0
     PWM_Duty3(rightDuty);
     PWM_Duty4(leftDuty);
@@ -115,7 +115,7 @@ void Motor_Forward(uint16_t leftDuty, uint16_t rightDuty){
 // Output: none
 // Assumes: Motor_Init() has been called
 void Motor_Right(uint16_t leftDuty, uint16_t rightDuty){ 
-   P3 -> OUT |= 0xC0;  // nSleep = 1
+    P3 -> OUT |= 0xC0;  // nSleep = 1
     P5 -> OUT &= ~0x10; // P5.4 PH = 0
     P5 -> OUT |= 0x20; // P5.5 PH = 1
     PWM_Duty4(leftDuty);
@@ -132,7 +132,7 @@ void Motor_Right(uint16_t leftDuty, uint16_t rightDuty){
 // Assumes: Motor_Init() has been called
 void Motor_Left(uint16_t leftDuty, uint16_t rightDuty){ 
   // write this as part of Lab 13
-P3 -> OUT |= 0xC0;  // nSleep = 1
+    P3 -> OUT |= 0xC0;  // nSleep = 1
     P5 -> OUT |= 0x10; // P5.4 PH = 1
     P5 -> OUT &= ~0x20; // P5.5 PH = 0
     PWM_Duty4(leftDuty);
@@ -148,7 +148,7 @@ P3 -> OUT |= 0xC0;  // nSleep = 1
 // Output: none
 // Assumes: Motor_Init() has been called
 void Motor_Backward(uint16_t leftDuty, uint16_t rightDuty){ 
-  P3 -> OUT |= 0xC0;  // nSleep = 1
+    P3 -> OUT |= 0xC0;  // nSleep = 1
     P5 -> OUT |= 0x30; // PH = 1
     PWM_Duty3(rightDuty);
     PWM_Duty4(leftDuty);
