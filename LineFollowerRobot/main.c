@@ -7,6 +7,7 @@
 #include "LaunchPad.h"
 #include "TimerA1.h"
 #include "Motor.h"
+#include <stdbool.h>
 
 #define WHITE     0x07
 #define LBLUE     0x06
@@ -35,6 +36,7 @@ typedef enum {
     WAY_OFF_LEFT,
     WAY_OFF_RIGHT,
     FINISH,
+    LOST,
     NUM_STATES
 } State;
 
@@ -49,6 +51,7 @@ typedef enum {
     WAY_OFF_LEFT_INPUT,
     WAY_OFF_RIGHT_INPUT,
     FINISH_INPUT,
+    LOST_INPUT,
     NUM_INPUTS
 } Input;
 
@@ -61,35 +64,54 @@ typedef struct {
 // Define the FSM table as a 2D array
 Transition fsmTable[NUM_STATES][NUM_INPUTS];
 
-void goStraight(){
+void goStraight(void){
     Motor_Forward(speed,speed);
     Clock_Delay1ms(time3);
-    Motor_Stop();
+//    Motor_Stop();
 }
 
-void goLeft(){
+void goLeft(void){
     Motor_Left(speed,speed);
     Clock_Delay1ms(time3);
-    Motor_Stop();
+//    Motor_Stop();
 }
 
-void goRight(){
+void goRight(void){
     Motor_Right(speed,speed);
     Clock_Delay1ms(time2);
-    Motor_Stop();
+//    Motor_Stop();
 }
 
-void goBackwards(){
+void goBackwards(void){
     Motor_Backward(backup_speed,backup_speed);
     Clock_Delay1ms(time_backup);
+//    Motor_Stop();
+}
+
+void stop(void){
     Motor_Stop();
 }
 
-void stop(){
-    Motor_Stop();
-}
+void initializeFSMTable(void) {
+    // Lost state transitions
+    fsmTable[LOST][LOST_INPUT].nextState = LOST;
+    fsmTable[LOST][LOST_INPUT].action = &goStraight;
 
-void initializeFSMTable() {
+    fsmTable[LOST][CENTER_INPUT].nextState = CENTER;
+    fsmTable[LOST][CENTER_INPUT].action = &goStraight;
+
+    fsmTable[LOST][SLIGHT_LEFT_INPUT].nextState = SLIGHT_LEFT;
+    fsmTable[LOST][SLIGHT_LEFT_INPUT].action = &goRight;
+
+    fsmTable[LOST][SLIGHT_RIGHT_INPUT].nextState = SLIGHT_RIGHT;
+    fsmTable[LOST][SLIGHT_RIGHT_INPUT].action = &goLeft;
+
+    fsmTable[LOST][WAY_OFF_LEFT_INPUT].nextState = WAY_OFF_LEFT;
+    fsmTable[LOST][WAY_OFF_LEFT_INPUT].action = &goLeft;
+
+    fsmTable[LOST][WAY_OFF_RIGHT_INPUT].nextState = WAY_OFF_RIGHT;
+    fsmTable[LOST][WAY_OFF_RIGHT_INPUT].action = &goRight;
+
     // Center state transitions
     fsmTable[CENTER][CENTER_INPUT].nextState = CENTER;
     fsmTable[CENTER][CENTER_INPUT].action = &goStraight;
@@ -219,10 +241,10 @@ void TimedPause(uint32_t time){
 void main(void){
 
     // Initialization
-//    initializeFSMTable();
+    initializeFSMTable();
     Clock_Init48MHz();
     LaunchPad_Init(); // built-in switches and LEDs
-    TimerA1_Init(&bump_interrupt,50000);
+    TimerA1_Init(&bump_interrupt,48000);
     EnableInterrupts();
     Bump_Init();      // bump switches
     Motor_Init();
@@ -231,77 +253,106 @@ void main(void){
 
     TimedPause(1000);
 
-//    State currentState = CENTER;
+    State currentState = CENTER;
+    bool FSM = true;
 
     while(1){
-//        WaitForInterrupt();
+        WaitForInterrupt();
         reflectance_data = Reflectance_Read(1000);
         reflectance_posn = Reflectance_Position(reflectance_data);
         Clock_Delay1ms(10);
 
 //        if (reflectance_data == 0b11111111 && reflectance_posn == 0) { // 2nd t-join
         if (reflectance_data == 0b11111111 && reflectance_posn == 0) { // 2nd t-join
-            Motor_Right(2000,2000);
-            Clock_Delay1ms(1500);
-            Motor_Stop();
-            Motor_Forward(4000,4000);
-            Clock_Delay1ms(500);
-            Motor_Stop();
-//            processInput(&currentState, FINISH_INPUT);
+            if (!FSM){
+                Motor_Right(2000,2000);
+                Clock_Delay1ms(1500);
+                Motor_Stop();
+                Motor_Forward(4000,4000);
+                Clock_Delay1ms(500);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, FINISH_INPUT);
+            }
         }
 //        else if (reflectance_posn > -47 && reflectance_posn < 47) { //center
         else if (reflectance_posn > -47 && reflectance_posn < 47) { //center
-            Motor_Forward(speed,speed);
-            Clock_Delay1ms(time3);
-            Motor_Stop();
-            //break;
-//            processInput(&currentState, CENTER_INPUT);
+            if (!FSM){
+                Motor_Forward(speed,speed);
+                Clock_Delay1ms(time3);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, CENTER_INPUT);
+            }
 //        } else if (reflectance_posn <= -47 && reflectance_posn > -142) { //slightly off to the left
         } else if (reflectance_posn <= -47 && reflectance_posn > -142) { //slightly off to the left
-            Motor_Left(speed,speed);
-            Clock_Delay1ms(time1);
-            Motor_Stop();
-//            processInput(&currentState, SLIGHT_LEFT_INPUT);
+            if (!FSM){
+                Motor_Left(speed,speed);
+                Clock_Delay1ms(time1);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, SLIGHT_LEFT_INPUT);
+            }
 //        } else if (reflectance_posn >= 47 && reflectance_posn <142) { //slightly off to the right
         } else if (reflectance_posn >= 47 && reflectance_posn <142) { //slightly off to the right
-            Motor_Right(speed,speed);
-            Clock_Delay1ms(time1);
-            Motor_Stop();
-//            processInput(&currentState, SLIGHT_RIGHT_INPUT);
+            if (!FSM){
+                Motor_Right(speed,speed);
+                Clock_Delay1ms(time1);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, SLIGHT_RIGHT_INPUT);
+            }
 //        } else if (reflectance_posn <= -142 && reflectance_posn >-237) { //off to the left
         } else if (reflectance_posn <= -142 && reflectance_posn >-237) { //off to the left
-            Motor_Left(speed,speed);
-            Clock_Delay1ms(time2);
-            Motor_Stop();
-//            processInput(&currentState, OFF_LEFT_INPUT);
+            if (!FSM){
+                Motor_Left(speed,speed);
+                Clock_Delay1ms(time2);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, OFF_LEFT_INPUT);
+            }
 //        } else if (reflectance_posn >= 142 && reflectance_posn < 237) { // off to the right
         } else if (reflectance_posn >= 142 && reflectance_posn < 237) { // off to the right
-            Motor_Right(speed,speed);
-            Clock_Delay1ms(time2);
-            Motor_Stop();
-//            processInput(&currentState, OFF_RIGHT_INPUT);
+            if (!FSM){
+                Motor_Right(speed,speed);
+                Clock_Delay1ms(time2);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, OFF_RIGHT_INPUT);
+            }
 //        } else if (reflectance_posn <= -237 && reflectance_posn > -332) { // way off left
         } else if (reflectance_posn <= -237 && reflectance_posn > -332) { // way off left
-            Motor_Left(speed,speed);
-            Clock_Delay1ms(time3);
-            Motor_Stop();
-//            processInput(&currentState, WAY_OFF_LEFT_INPUT);
+            if (!FSM){
+                Motor_Left(speed,speed);
+                Clock_Delay1ms(time3);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, WAY_OFF_LEFT_INPUT);
+            }
 //        } else if (reflectance_posn >= 237 && reflectance_posn < 332) { // way off right
         } else if (reflectance_posn >= 237 && reflectance_posn < 332) { // way off right
-            Motor_Right(speed,speed);
-            Clock_Delay1ms(time3);
-            Motor_Stop();
-//            processInput(&currentState, WAY_OFF_RIGHT_INPUT);
+            if (!FSM){
+                Motor_Right(speed,speed);
+                Clock_Delay1ms(time3);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, WAY_OFF_RIGHT_INPUT);
+            }
 //        } else if (reflectance_data == 0b00000000 && reflectance_posn == 333) { // goal
         } else if (reflectance_data == 0b00000000 && reflectance_posn == 333) { // goal
-            Motor_Stop();
-            //break;
-//            processInput(currentState, FINISH_INPUT);
+            if (!FSM){
+                Motor_Stop();
+            } else{
+                processInput(&currentState, FINISH_INPUT);
+            }
         } else {
-            Motor_Backward(backup_speed,backup_speed);
-            Clock_Delay1ms(time_backup);
-            Motor_Stop();
-//            processInput(currentState, FINISH_INPUT);
+            if (!FSM){
+                Motor_Backward(backup_speed,backup_speed);
+                Clock_Delay1ms(time_backup);
+                Motor_Stop();
+            } else{
+                processInput(&currentState, LOST_INPUT);
+            }
         }
     }
 }

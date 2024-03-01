@@ -162,20 +162,20 @@ int32_t Reflectance_Diff(uint8_t data){
     // weights
     int8_t wi[] = {332,237,142,47,-47,-142,-237,-332};
     int32_t top = 0;
-    int32_t bottom = 0;
+    int32_t bot = 0;
     int32_t bit;
     for (i=0; i<4; i++){
         bit = (data >> i) & 1;
-        top += w[i] * bit;
-        bottom += bit;
+        top += wi[i] * bit;
+        bot += bit;
     }
-    pos = top/bottom;
+    pos = top/bot;
     top = 0;
-    bottom = 0;
+    bot = 0;
     for (i=0; i<4; i++){
         bit = (data >> i) & 1;
-        top += w[i] * bit;
-        bottom += bit;
+        top += wi[i] * bit;
+        bot += bit;
     }
     return (pos + (top/bot));
 }
