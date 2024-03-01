@@ -156,6 +156,29 @@ int32_t Reflectance_Position(uint8_t data){
     return pos;
 }
 
+int32_t Reflectance_Diff(uint8_t data){
+    uint32_t pos; // position of the reflector
+    int32_t i;
+    // weights
+    int8_t wi[] = {332,237,142,47,-47,-142,-237,-332};
+    int32_t top = 0;
+    int32_t bottom = 0;
+    int32_t bit;
+    for (i=0; i<4; i++){
+        bit = (data >> i) & 1;
+        top += w[i] * bit;
+        bottom += bit;
+    }
+    pos = top/bottom;
+    top = 0;
+    bottom = 0;
+    for (i=0; i<4; i++){
+        bit = (data >> i) & 1;
+        top += w[i] * bit;
+        bottom += bit;
+    }
+    return (pos + (top/bot));
+}
 
 // ------------Reflectance_Start------------
 // Begin the process of reading the eight sensors
