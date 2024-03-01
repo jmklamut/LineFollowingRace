@@ -137,4 +137,7 @@ void Motor_Left(uint16_t leftDuty, uint16_t rightDuty);
  */
 void Motor_Backward(uint16_t leftDuty, uint16_t rightDuty);
 
+void Motor_OnlyLeft(uint16_t leftDuty, uint16_t rightDuty);
+
+void Motor_OnlyRightuint16_t leftDuty, uint16_t rightDuty);
 #endif /* MOTOR_H_ */

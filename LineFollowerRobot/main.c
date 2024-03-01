@@ -89,6 +89,18 @@ void stop(){
     Motor_Stop();
 }
 
+void goOnlyLeft(){
+    Motor_OnlyLeft(speed,speed);
+    Clock_Delay1ms(time3);
+    Motor_Stop();
+}
+
+void goOnlyRight(){
+    Motor_OnlyRight(speed,speed);
+    Clock_Delay1ms(time3);
+    Motor_Stop();
+}
+
 void initializeFSMTable() {
     // Center state transitions
     fsmTable[CENTER][CENTER_INPUT].nextState = CENTER;

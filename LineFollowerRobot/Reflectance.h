@@ -146,6 +146,8 @@ uint8_t Reflectance_Center(uint32_t time);
  * */
 int32_t Reflectance_Position(uint8_t data);
 
+int32_t Reflectance_Diff(uint8_t data);
+
 /**
  * <b>Begin the process of reading the eight sensors</b>:<br>
   1) Turn on the 8 IR LEDs<br>
