@@ -154,21 +154,3 @@ void Motor_Backward(uint16_t leftDuty, uint16_t rightDuty){
     PWM_Duty4(leftDuty);
     return;
 }
-
-void Motor_OnlyRight(uint16_t leftDuty, uint16_t rightDuty){ 
-    P3 -> OUT |= 0x20;  // nSleep = 1
-    P3 -> OUT &= ~0x10; 
-    P5 -> OUT |= 0x20; 
-    PWM_Duty4(leftDuty);
-    PWM_Duty3(rightDuty);
-    return;
-}
-
-void Motor_OnlyLeftLeft(uint16_t leftDuty, uint16_t rightDuty){ 
-    P3 -> OUT |= 0x10; 
-    P3 -> OUT &= ~0x20; 
-    P5 -> OUT |= 0x10; 
-    PWM_Duty4(leftDuty);
-    PWM_Duty3(rightDuty);
-    return;
-}
