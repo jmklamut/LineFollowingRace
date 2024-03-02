@@ -23,6 +23,7 @@ volatile int speed = 1500, backup_speed = 4000;
 volatile int time1 = 50,
              time2 = 100,
              time3 = 150,
+             time4 = 550,
              time_backup = 300;
 
 // Define states
@@ -70,16 +71,40 @@ void goStraight(void){
 //    Motor_Stop();
 }
 
-void goLeft(void){
+void goLeft(void){ //very very slightly turns left
     Motor_Left(speed,speed);
     Clock_Delay1ms(time3);
 //    Motor_Stop();
 }
 
-void goRight(void){
+void goRight(void){ //very very slightly turns right
     Motor_Right(speed,speed);
-    Clock_Delay1ms(time2);
+    Clock_Delay1ms(time3);
 //    Motor_Stop();
+}
+
+void goSlightLeft(void){ // turns robot slightly left
+    Motor_Left(backup_speed,backup_speed);
+    Clock_Delay1ms(time2);
+    Motor_Stop();
+}
+
+void goSlightRight(void){ // turns robot slightly right
+    Motor_Right(backup_speed,backup_speed);
+    Clock_Delay1ms(time2);
+    Motor_Stop();
+}
+
+void goHardLeft(void){ // 90 degree turn
+    Motor_Left(backup_speed,backup_speed);
+    Clock_Delay1ms(time4);
+    Motor_Stop();
+}
+
+void goHardRight(void){ // 90 degree turn
+    Motor_Right(backup_speed,backup_speed);
+    Clock_Delay1ms(time4);
+    Motor_Stop();
 }
 
 void goBackwards(void){
