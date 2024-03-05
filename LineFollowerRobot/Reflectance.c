@@ -56,6 +56,8 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "msp432.h"
 #include "Clock.h"
 
+uint8_t previous_data = 0x00;
+
 // ------------Reflectance_Init------------
 // Initialize the GPIO pins associated with the QTR-8RC
 // reflectance sensor.  Infrared illumination LEDs are
@@ -178,6 +180,42 @@ int32_t Reflectance_Diff(uint8_t data){
         bot += bit;
     }
     return (pos + (top/bot));
+}
+
+uint8_t Reflectance_FSM(uint8_t data){
+    int32_t prev_zero_count = 0;
+    int32_t zero_count = 0;
+    int32_t count = 0;
+    int32_t result = 0x00;
+    int32_t i;
+    int32_t bit;
+    for (i=0; i<8; i++){
+        bit = (previous_data >> i) & 1;
+        if(bit == 0){
+            prev_zero_count++;
+        }
+    }
+    for (i=0; i<8; i++){
+        bit = (data >> i) & 1;
+        if(i == 0 && bit == 1){
+           result |= 0x02;
+        }
+        else if(i == 7 && bit == 1){
+            result |= 0x04;
+        }
+        else if(bit != ((previous_data >> i) & 1)){
+            count++;
+        }
+        else if(bit == 0){
+            zero_count++;
+        }
+    }
+    if(count > 1 || (prev_zero_count > 7 && zero_count <= 7) || (prev_zero_count <= 7 && zero_count > 7)){
+        result |= 0x01;
+    }
+    previous_data = data;
+    return result;
+
 }
 
 // ------------Reflectance_Start------------
