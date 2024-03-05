@@ -183,9 +183,8 @@ int32_t Reflectance_Diff(uint8_t data){
 }
 
 uint8_t Reflectance_FSM(uint8_t data){
-    int32_t prev_zero_count = 0;
-    int32_t zero_count = 0;
-    int32_t count = 0;
+    uint8_t prev_zero_count = 0;
+    uint8_t zero_count = 0;
     int32_t result = 0x00;
     int32_t i;
     int32_t bit;
@@ -203,19 +202,15 @@ uint8_t Reflectance_FSM(uint8_t data){
         else if(i == 7 && bit == 1){
             result |= 0x04;
         }
-        else if(bit != ((previous_data >> i) & 1)){
-            count++;
-        }
         else if(bit == 0){
             zero_count++;
         }
     }
-    if(count > 1 || (prev_zero_count > 7 && zero_count <= 7) || (prev_zero_count <= 7 && zero_count > 7)){
+    if(((8-zero_count) - (8-prev_zero_count)) == 0xFF || ((8-zero_count) - (8-prev_zero_count)) < 2 || (prev_zero_count > 7 && zero_count <= 7) || (prev_zero_count <= 7 && zero_count > 7)){
         result |= 0x01;
     }
     previous_data = data;
     return result;
-
 }
 
 // ------------Reflectance_Start------------
