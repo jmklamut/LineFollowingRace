@@ -101,52 +101,10 @@ void Reflectance_Init(void);
  */
 uint8_t Reflectance_Read(uint32_t time);
 
-/**
- * <b>Read the two center sensors</b>:<br>
-  1) Turn on the 8 IR LEDs<br>
-  2) Pulse the 8 sensors high for 10 us<br>
-  3) Make the sensor pins input<br>
-  4) Wait <b>time</b> us<br>
-  5) Read sensors (white is 0, black is 1)<br>
-  6) Turn off the 8 IR LEDs<br>
-  <table>
-<caption id="QTR_center">Two bit output from QTR-8RC reflectance sensor array</caption>
-<tr><th>(Left,Right) <th>Sensors        <th>Meaning
-<tr><td>1,1          <td>both sensors   <td>on line
-<tr><td>1,0          <td>left left      <td>off to right
-<tr><td>0,1          <td>just right     <td>off to left
-<tr><td>0,0          <td>neither        <td>lost
-</table>
- * @param  time delay value in us
- * @return 2-bit result, 0 (off road), 1 off to left, 2 off to right, 3 on road
- * @note Assumes Reflectance_Init() has been called
- * @brief  Read the two center sensors.
-*/
-uint8_t Reflectance_Center(uint32_t time);
+// Output 3 bit output based on 8 bit input
+uint8_t Reflectance_FSM(uint8_t data);
 
 
-/**
- * <b>Calculate the weighted average for each bit</b>:<br>
- * Position varies from -332 (left) to +332 (right), with units of 0.1mm.<br>
-<table>
-<caption id="QTR_distance">8 element arrays</caption>
-<tr><th>  <th>bit7<th>bit6<th>bit5<th>bit4<th>bit3<th>bit2<th>bit1<th>bit0
-<tr><td>Weight<td>-332<td>-237<td>-142<td> -47<td>  47<td> 142<td> 237<td> 332
-<tr><td>Mask  <td>0x01<td>0x02<td>0x04<td>0x08<td>0x10<td>0x20<td>0x40<td>0x80
-</table>
- * count = 0<br>
- * sum = 0<br>
- * for i from 0 to 7 <br>
- * if (data&Mask[i]) then count++ and sum = sum+Weight[i]<br>
- * calculate <b>position</b> = sum/count
- * @param  data is 8-bit result from line sensor
- * @return position in 0.1mm relative to center of line
- * @brief  Perform sensor integration.
- * @note returns 333 if data is zero (off the line)
- * */
-int32_t Reflectance_Position(uint8_t data);
-
-int32_t Reflectance_Diff(uint8_t data);
 /**
  * <b>Begin the process of reading the eight sensors</b>:<br>
   1) Turn on the 8 IR LEDs<br>
