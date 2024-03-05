@@ -26,6 +26,7 @@ volatile int time1 = 50,
              time4 = 550,
              time_backup = 300;
 
+/*
 // Define states
 typedef enum {
     // Possible States
@@ -64,6 +65,8 @@ typedef struct {
 
 // Define the FSM table as a 2D array
 Transition fsmTable[NUM_STATES][NUM_INPUTS];
+
+*/
 
 void goStraight(void){
     Motor_Forward(speed,speed);
@@ -117,6 +120,44 @@ void stop(void){
     Motor_Stop();
 }
 
+void Motor_Handler(uint8_t data, uint8_t ){
+    switch(data) {
+        case 0x00:
+            Motor_Backward(backup_speed, backup_speed);
+            Clock_Delay1ms(Spt->delay);
+            break;
+        case 0x01:
+            Motor_Forward(speed, speed);
+            Clock_Delay1ms(Spt->delay);
+            break;
+        case 0x02:
+            Motor_Left(speed, speed);
+            Clock_Delay1ms(Spt->delay);
+            break;
+        case 0x03:
+            Motor_Right(speed, speed);
+            Clock_Delay1ms(Spt->delay);
+            Motor_Stop();
+            break;
+        case 0x04:
+            Motor_Left(backup_speed, backup_speed);
+            Clock_Delay1ms(Spt->delay);
+            Motor_Stop()
+            break;
+        case 0x05:
+            Motor_Right(backup_speed, backup_speed);
+            Clock_Delay1ms(Spt->delay);
+            break;
+        case 0x06:
+            Motor_Stop();
+            break;
+        default:
+            Motor_Stop();
+            printf("Invalid data value!\n");
+            break;
+}
+
+/*
 void initializeFSMTable(void) {
     // Lost state transitions
     fsmTable[LOST][LOST_INPUT].nextState = LOST;
@@ -215,6 +256,8 @@ void processInput(State *currentState, Input input) {
     *currentState = currentTransition.nextState;
     currentTransition.action();
 }
+*/
+
 
 void SysTick_Handler(void){
     volatile static uint8_t count=0;
@@ -231,6 +274,7 @@ void SysTick_Handler(void){
     count++;
     if(count==10)count=0;
 }
+
 
 void bump_interrupt(void) {
     uint8_t bumpResult = Bump_Read();
@@ -256,6 +300,7 @@ void bump_interrupt(void) {
     return;
 }
 
+
 void TimedPause(uint32_t time){
   Clock_Delay1ms(time);          // run for a while and stop
   Motor_Stop();
@@ -263,7 +308,99 @@ void TimedPause(uint32_t time){
   while(LaunchPad_Input());     // wait for release
 }
 
+
+//================================================================
+
+// Linked data structure
+struct State {
+  uint32_t out;                // 3-bit output (only 0-5 used)
+  uint32_t delay;              // time to delay in 1ms
+  const struct State *next[8]; // Next if 3-bit input is 0-7
+};
+typedef const struct State State_t;
+
+#define Center        &fsm[0]
+#define Left          &fsm[1]
+#define Right         &fsm[2]
+#define SharpLeft     &fsm[3]
+#define SharpRight    &fsm[4]
+#define GapJump       &fsm[5]
+// student starter code
+
+/*
+3 bit Input:
+Bit 0: Far Left Sensor
+Bit 1: Far Right Sensor
+Bit 2: Transition in and out of only 0’s / 2+ bit difference
+ */
+
+/*
+3 bit Output:
+0x00 = straight
+0x01 = slightly left
+0x02 = slightly right
+0x03 = hard left
+0x04 = hard right
+0x05 = backwards
+*/
+
+// Inputs:               000      010       100        110           001          011          101          111
+State_t fsm[5]={
+  {0x01, time3,       { Center,   Right,    Left,     Center,      GapJump,     SharpRight,  SharpLeft,  SharpRight}},  // Center
+  {0x02, time3,       { Center,   Right,    Left,     SharpRight,  SharpLeft,   Right,       SharpLeft,  SharpRight}},  // Left
+  {0x03, time3,       { Center,   Right,    Left,     SharpLeft,   SharpRight,  SharpRight,  Left,       SharpLeft}}   // Right
+  {0x04, time4,       { Center,   Right,    GapJump,  Right,       Center,      Right,       Left,       Right}}   // Sharp Left
+  {0x05, time4,       { Center,   GapJump,  Left,     Left,        Center,      Right,       Left,       Left}}   // Sharp Right
+  {0x01, time_backup, { GapJump,  Right,    Left,     SharpRight,  Center,      Right,       Left,       SharpRight}}   // Gap Jump
+};
+
+
+
+State_t *Spt;  // pointer to the current state
+uint32_t Input;
+uint32_t Output;
+
+//================================================================
+
+
 void main(void){
+    // Initialization
+    initializeFSMTable();
+    Clock_Init48MHz();
+    LaunchPad_Init(); // built-in switches and LEDs
+    TimerA1_Init(&bump_interrupt,48000);
+    EnableInterrupts();
+    Bump_Init();      // bump switches
+    Motor_Init();
+    Reflectance_Init();
+    SysTick_Init(48000,2);  // set up SysTick for 1000 Hz interrupts
+
+    TimedPause(1000);
+
+    Spt = Center;
+
+    while(1){
+        WaitForInterrupt();
+        //Perform State Actions
+        Output = Spt->out;            // Set LED to output from FSM
+        LaunchPad_Output(Output);     // LED Output for debugging
+        Motor_Handler(output);
+
+        //Read Data
+        reflectance_data = Reflectance_Read(1000);      // read input data
+        new input = Transform_Input(reflectance_data);      // turn 8 bit data into 3 bit input
+        reflectance_posn = Reflectance_Position(reflectance_data);      // calculate position
+        Spt = Spt->next[Input];       // next depends on input and state
+
+
+    }
+}
+
+
+
+
+/*
+void main1(void){
 
     // Initialization
     initializeFSMTable();
@@ -381,3 +518,4 @@ void main(void){
         }
     }
 }
+*/
