@@ -19,7 +19,7 @@
 #define OFF       0x00
 
 volatile uint8_t reflectance_data, bump_data;
-volatile int speed = 1500, backup_speed = 4000;
+volatile int speed = 6000, slow_speed = 4000, backup_speed = 4000;
 const int time1 = 50,
              time2 = 100,
              time3 = 150,
@@ -75,13 +75,14 @@ void goStraight(void){
 }
 
 void goLeft(void){ //very very slightly turns left
-    Motor_Left(speed,speed);
+    //Motor_Left(speed,speed);
+    //Motor_Foward(speed, )
     //Clock_Delay1ms(time3);
 //    Motor_Stop();
 }
 
 void goRight(void){ //very very slightly turns right
-    Motor_Right(speed,speed);
+    //Motor_Right(speed,speed);
 //    Clock_Delay1ms(time3);
 //    Motor_Stop();
 }
@@ -289,6 +290,7 @@ typedef const struct State State_t;
 #define SharpLeft     &fsm[3]
 #define SharpRight    &fsm[4]
 #define GapJump       &fsm[5]
+#define Circle        &fsm[6]
 // student starter code
 
 /*
@@ -300,22 +302,24 @@ Bit 2: Transition in and out of only 0’s / 2+ bit difference
 
 /*
 3 bit Output:
-0x00 = straight
-0x01 = slightly left
-0x02 = slightly right
-0x03 = hard left
-0x04 = hard right
-0x05 = backwards
+0x00 = stop = OFF
+0x01 = straight = RED
+0x02 = slightly left = GREEN
+0x03 = slightly right = YELLOW
+0x04 = hard left = BLUE
+0x05 = hard right = PURPLE
+0x06 = backwards = CYAN
 */
 
-// Inputs:        000      010       100        110           001          011          101          111
-State_t fsm[6]={
-  {0x01, 150,  { Center,   Right,    Left,     Center,      GapJump,     SharpRight,  SharpLeft,  SharpRight}},  // Center, time3
-  {0x02, 150,  { Center,   Right,    Left,     SharpRight,  SharpLeft,   Right,       SharpLeft,  SharpRight}},  // Left, time3
-  {0x03, 150,  { Center,   Right,    Left,     SharpLeft,   SharpRight,  SharpRight,  Left,       SharpLeft}},   // Right, time3
-  {0x04, 550,  { Center,   Right,    GapJump,  Right,       Center,      Right,       Left,       Right}},       // Sharp Left, time4
-  {0x05, 550,  { Center,   GapJump,  Left,     Left,        Center,      Right,       Left,       Left}},        // Sharp Right, time4
-  {0x01, 300,  { GapJump,  Right,    Left,     SharpRight,  Center,      Right,       Left,       SharpRight}}   // Gap Jump, time_backup
+// Inputs:        000        001          010        011        100          101          110          111
+State_t fsm[7]={
+  {0x00, 150,  { Center,    GapJump,     Right,    SharpRight,  Left,     SharpLeft,  Center,      SharpRight}},  // Center, time3
+  {0x01, 150,  { Center,    SharpLeft,   Right,    Right,       Left,     SharpLeft,  SharpRight,  SharpRight}},  // Left, time3
+  {0x02, 150,  { Center,    SharpRight,  Right,    SharpRight,  Left,     Left,       SharpLeft,   SharpLeft}},   // Right, time3
+  {0x03, 550,  { Center,    Center,      Right,    Right,       GapJump,  Left,       Right,       Right}},       // Sharp Left, time4
+  {0x04, 550,  { Center,    Center,      GapJump,  Right,       Left,     Left,       Left,        Left}},        // Sharp Right, time4
+  {0x00, 300,  { Circle,    Center,      Right,    Right,       Left,     Left,       SharpRight,  SharpRight}},  // Gap Jump, time_backup
+  {0x02, 150,  { Circle,    Center,      Center,   Center,      Center,   Center,     Center,      Center}}       // Circle, time3
 };
 
 
@@ -329,29 +333,29 @@ uint8_t Output;
 void Motor_Handler(uint8_t data){
     switch(data) {
         case 0x00:
-            Motor_Backward(backup_speed, backup_speed);
-            Clock_Delay1ms(Spt->delay);
-            break;
-        case 0x01:
             Motor_Forward(speed, speed);
             Clock_Delay1ms(Spt->delay);
             break;
-        case 0x02:
-            Motor_Left(speed, speed);
+        case 0x01:
+            Motor_Forward(speed, slow_speed);
             Clock_Delay1ms(Spt->delay);
             break;
-        case 0x03:
-            Motor_Right(speed, speed);
+        case 0x02:
+            Motor_Forward(slow_speed, speed);
             Clock_Delay1ms(Spt->delay);
 //            Motor_Stop();
             break;
-        case 0x04:
+        case 0x03:
             Motor_Left(backup_speed, backup_speed);
             Clock_Delay1ms(Spt->delay);
 //            Motor_Stop();
             break;
-        case 0x05:
+        case 0x04:
             Motor_Right(backup_speed, backup_speed);
+            Clock_Delay1ms(Spt->delay);
+            break;
+        case 0x05:
+            Motor_Backward(backup_speed, backup_speed);
             Clock_Delay1ms(Spt->delay);
             break;
         case 0x06:
@@ -382,7 +386,7 @@ void main(void){
         WaitForInterrupt();
         //Perform State Actions
         Output = Spt->out;            // Set LED to output from FSM
-        LaunchPad_Output(Output);     // LED Output for debugging
+        LaunchPad_Output(Output+1);     // LED Output for debugging
         Motor_Handler(Output);
 
         //Read Data
