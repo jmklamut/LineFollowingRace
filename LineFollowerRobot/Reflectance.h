@@ -101,31 +101,13 @@ void Reflectance_Init(void);
  */
 uint8_t Reflectance_Read(uint32_t time);
 
-/**
- * <b>Read the two center sensors</b>:<br>
-  1) Turn on the 8 IR LEDs<br>
-  2) Pulse the 8 sensors high for 10 us<br>
-  3) Make the sensor pins input<br>
-  4) Wait <b>time</b> us<br>
-  5) Read sensors (white is 0, black is 1)<br>
-  6) Turn off the 8 IR LEDs<br>
-  <table>
-<caption id="QTR_center">Two bit output from QTR-8RC reflectance sensor array</caption>
-<tr><th>(Left,Right) <th>Sensors        <th>Meaning
-<tr><td>1,1          <td>both sensors   <td>on line
-<tr><td>1,0          <td>left left      <td>off to right
-<tr><td>0,1          <td>just right     <td>off to left
-<tr><td>0,0          <td>neither        <td>lost
-</table>
- * @param  time delay value in us
- * @return 2-bit result, 0 (off road), 1 off to left, 2 off to right, 3 on road
- * @note Assumes Reflectance_Init() has been called
- * @brief  Read the two center sensors.
-*/
-uint8_t Reflectance_Center(uint32_t time);
+// Output 3 bit output based on 8 bit input
+uint8_t Reflectance_FSM(uint8_t data);
 
 
 /**
+
+=======
  * <b>Calculate the weighted average for each bit</b>:<br>
  * Position varies from -332 (left) to +332 (right), with units of 0.1mm.<br>
 <table>
@@ -150,6 +132,7 @@ int32_t Reflectance_Diff(uint8_t data);
 
 uint8_t Reflectance_FSM(uint8_t data)
 /**
+
  * <b>Begin the process of reading the eight sensors</b>:<br>
   1) Turn on the 8 IR LEDs<br>
   2) Pulse the 8 sensors high for 10 us<br>

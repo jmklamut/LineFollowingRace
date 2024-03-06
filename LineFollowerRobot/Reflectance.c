@@ -56,7 +56,9 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "msp432.h"
 #include "Clock.h"
 
+//volatile uint8_t prev_count = 0;
 uint8_t previous_data = 0x00;
+
 
 // ------------Reflectance_Init------------
 // Initialize the GPIO pins associated with the QTR-8RC
@@ -116,71 +118,104 @@ uint8_t Reflectance_Read(uint32_t time){
     return result;
 }
 
-// ------------Reflectance_Center------------
-// Read the two center sensors
-// Turn on the 8 IR LEDs
-// Pulse the 8 sensors high for 10 us
-// Make the sensor pins input
-// wait t us
-// Read sensors
-// Turn off the 8 IR LEDs
-// Input: time to wait in usec
-// Output: 0 (off road), 1 off to left, 2 off to right, 3 on road
-// (Left,Right) Sensors
-// 1,1          both sensors   on line
-// 0,1          just right     off to left
-// 1,0          left left      off to right
-// 0,0          neither        lost
-// Assumes: Reflectance_Init() has been called
-uint8_t Reflectance_Center(uint32_t time){
-    // write this as part of Lab 6
-  return 0; // replace this line
-}
 
-
-// Perform sensor integration
-// Input: data is 8-bit result from line sensor
-// Output: position in 0.1mm relative to center of line
-int32_t Reflectance_Position(uint8_t data){
-    // write this as part of Lab 6
-    uint32_t pos; // position of the reflector
+/*
+uint8_t Reflectance_FSM(uint8_t data){
+    uint8_t prev_zero_count = 0;
+    uint8_t zero_count = 0;
+    int32_t result = 0x00;
     int32_t i;
-    // weights
-    int8_t wi[] = {332,237,142,47,-47,-142,-237,-332};
-    int32_t numerator = 0;
-    int32_t denominator = 0;
-    for (i=0; i<8; i++){
-        numerator += data%2 * wi[i];
-        denominator += data%2;
-        data /= 2;
-    }
-    pos = numerator/denominator;
-    return pos;
-}
-
-int32_t Reflectance_Diff(uint8_t data){
-    uint32_t pos; // position of the reflector
-    int32_t i;
-    // weights
-    int8_t wi[] = {332,237,142,47,-47,-142,-237,-332};
-    int32_t top = 0;
-    int32_t bot = 0;
     int32_t bit;
-    for (i=0; i<4; i++){
-        bit = (data >> i) & 1;
-        top += wi[i] * bit;
-        bot += bit;
+    for (i=0; i<8; i++){
+        bit = (prev_data >> i) & 1;
+        if(bit == 0){
+            prev_zero_count++;
+        }
     }
-    pos = top/bot;
-    top = 0;
-    bot = 0;
-    for (i=0; i<4; i++){
+    for (i=0; i<8; i++){
         bit = (data >> i) & 1;
-        top += wi[i] * bit;
-        bot += bit;
+        if(i == 0 && bit == 1){
+           result |= 0x02;
+        }
+        else if(i == 7 && bit == 1){
+            result |= 0x04;
+        }
+        else if(bit == 0){
+            zero_count++;
+        }
     }
-    return (pos + (top/bot));
+    if(((8-zero_count) - (8-prev_zero_count)) == 0xFF || ((8-zero_count) - (8-prev_zero_count)) < 2 || (prev_zero_count > 7 && zero_count <= 7) || (prev_zero_count <= 7 && zero_count > 7)){
+        result |= 0x01;
+    }
+    prev_data = data;
+    return result;
 }
+*/
+
+uint8_t Reflectance_FSM(uint8_t data){
+    uint8_t i;
+    uint8_t new_data = 0x00;
+
+    for (i=0; i<8; i++){
+        if(((data >> i) & 0x01) == 0x01){
+            if(i == 0) {    //0 = Rightmost Sensor
+                new_data |= 0x01;   //Right Sensor = On
+            }
+            else if(i == 7){     // 7 = Leftmost Sensor
+                new_data |= 0x04;   //Left Sensor = On
+            }
+            else{
+                new_data |= 0x02;
+                i = 6;
+            }
+        }
+    }
+
+    return new_data;
+
+}
+
+
+/*
+uint8_t Reflectance_FSM(uint8_t data){
+    uint8_t curr_count = 0;
+    uint8_t i, diff;
+    uint8_t pc = 0, cc = 0;
+    uint8_t new_data = 0x00;
+
+    for (i=0; i<8; i++){
+        if(((data >> i) & 0x01) == 0x01){
+            if(i == 0) {    //0 = Rightmost Sensor
+                new_data |= 0x02;   //Right Sensor = On
+            }
+            if(i == 7){     // 7 = Leftmost Sensor
+                new_data |= 0x04;   //Left Sensor = On
+            }
+            curr_count++;    //Any Sensor is On
+        }
+    }
+
+    diff = curr_count - prev_count;
+    if(prev_count){
+        pc = 1;
+    }
+    if(curr_count){
+        cc = 1;
+    }
+
+    //   0 ! <-> 1   AND    diff = -1       diff = 0        diff = 1
+    if((pc ^ cc == 0) & (diff == 0xFF || diff == 0x00 || diff == 0x01)){
+        new_data &= ~0x01;
+    }
+    else{
+        new_data |= 0x01;
+    }
+
+    prev_count = curr_count;
+    return new_data;
+
+}
+*/
 
 uint8_t Reflectance_FSM(uint8_t data){
     uint8_t prev_zero_count = 0;
