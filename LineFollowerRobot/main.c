@@ -19,7 +19,7 @@
 #define OFF       0x00
 
 volatile uint8_t reflectance_data, bump_data;
-volatile int speed = 6000, slow_speed = 4000, backup_speed = 4000;
+const int speed = 2000, slow_speed = 1000, backup_speed = 4000;
 const int time1 = 50,
              time2 = 100,
              time3 = 150,
@@ -289,8 +289,10 @@ typedef const struct State State_t;
 #define Right         &fsm[2]
 #define SharpLeft     &fsm[3]
 #define SharpRight    &fsm[4]
-#define GapJump       &fsm[5]
-#define Circle        &fsm[6]
+//#define GapJump       &fsm[5]
+//#define Circle        &fsm[6]
+//#define Error         &fsm[7]
+
 // student starter code
 
 /*
@@ -311,15 +313,16 @@ Bit 2: Transition in and out of only 0’s / 2+ bit difference
 0x06 = backwards = CYAN
 */
 
-// Inputs:        000        001          010        011        100          101          110          111
-State_t fsm[7]={
-  {0x00, 150,  { Center,    GapJump,     Right,    SharpRight,  Left,     SharpLeft,  Center,      SharpRight}},  // Center, time3
-  {0x01, 150,  { Center,    SharpLeft,   Right,    Right,       Left,     SharpLeft,  SharpRight,  SharpRight}},  // Left, time3
-  {0x02, 150,  { Center,    SharpRight,  Right,    SharpRight,  Left,     Left,       SharpLeft,   SharpLeft}},   // Right, time3
-  {0x03, 550,  { Center,    Center,      Right,    Right,       GapJump,  Left,       Right,       Right}},       // Sharp Left, time4
-  {0x04, 550,  { Center,    Center,      GapJump,  Right,       Left,     Left,       Left,        Left}},        // Sharp Right, time4
-  {0x00, 300,  { Circle,    Center,      Right,    Right,       Left,     Left,       SharpRight,  SharpRight}},  // Gap Jump, time_backup
-  {0x02, 150,  { Circle,    Center,      Center,   Center,      Center,   Center,     Center,      Center}}       // Circle, time3
+// Inputs:        000         001      010      011      100       101         110          111
+State_t fsm[5]={
+  {0x00, 50,   { Center,      Right,   Center,  Right,   Left,     Center,  Left,    Center}},     // Center, time3
+  {0x01, 150,  { SharpLeft,   Right,   Center,  Right,   Left,     Center,  Left,    Center}},     // Left, time3
+  {0x02, 150,  { SharpRight,  Right,   Center,  Right,   Left,     Center,  Left,    Center}},     // Right, time3
+  {0x03, 450,  { Center,      Center,  Center,  Center,  Center,   Center,  Center,  Center}},     // Sharp Left, time4
+  {0x04, 450,  { Center,      Center,  Center,  Center,  Center,   Center,  Center,  Center}}      // Sharp Right, time4
+//  {0x05, 300,  { Center,    Center,      Right,    Right,       Left,     Left,       SharpRight,  SharpRight}},  // Gap Jump, time_backup
+//  {0x02, 150,  { Circle,    Center,      Center,   Center,      Center,   Center,     Center,      Center}},       // Circle, time3
+//  {0x06, 550,  {Error, Error, Error, Error, Error, Error, Error, Error}}    //DEBUGGING
 };
 
 
@@ -337,11 +340,11 @@ void Motor_Handler(uint8_t data){
             Clock_Delay1ms(Spt->delay);
             break;
         case 0x01:
-            Motor_Forward(speed, slow_speed);
+            Motor_Forward(slow_speed, speed);
             Clock_Delay1ms(Spt->delay);
             break;
         case 0x02:
-            Motor_Forward(slow_speed, speed);
+            Motor_Forward(speed, slow_speed);
             Clock_Delay1ms(Spt->delay);
 //            Motor_Stop();
             break;
