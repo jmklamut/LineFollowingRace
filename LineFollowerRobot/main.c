@@ -315,14 +315,11 @@ Bit 2: Transition in and out of only 0’s / 2+ bit difference
 
 // Inputs:        000         001      010      011      100       101         110          111
 State_t fsm[5]={
-  {0x00, 50/3,   { Center,      Right,   Center,  Right,   Left,     Center,  Left,    Center}},     // Center, time3
+  {0x00, 50/3,     { Center,      Right,   Center,  Right,   Left,     Center,  Left,    Center}},     // Center, time3
   {0x01, 150-inc,  { SharpLeft,   Right,   Center,  Right,   Left,     Center,  Left,    Center}},     // Left, time3
   {0x02, 150-inc,  { SharpRight,  Right,   Center,  Right,   Left,     Center,  Left,    Center}},     // Right, time3
   {0x03, 450-inc,  { Center,      Center,  Center,  Center,  Center,   Center,  Center,  Center}},     // Sharp Left, time4
   {0x04, 450-inc,  { Center,      Center,  Center,  Center,  Center,   Center,  Center,  Center}}      // Sharp Right, time4
-//  {0x05, 300,  { Center,    Center,      Right,    Right,       Left,     Left,       SharpRight,  SharpRight}},  // Gap Jump, time_backup
-//  {0x02, 150,  { Circle,    Center,      Center,   Center,      Center,   Center,     Center,      Center}},       // Circle, time3
-//  {0x06, 550,  {Error, Error, Error, Error, Error, Error, Error, Error}}    //DEBUGGING
 };
 
 
