@@ -106,6 +106,33 @@ uint8_t Reflectance_FSM(uint8_t data);
 
 
 /**
+
+=======
+ * <b>Calculate the weighted average for each bit</b>:<br>
+ * Position varies from -332 (left) to +332 (right), with units of 0.1mm.<br>
+<table>
+<caption id="QTR_distance">8 element arrays</caption>
+<tr><th>  <th>bit7<th>bit6<th>bit5<th>bit4<th>bit3<th>bit2<th>bit1<th>bit0
+<tr><td>Weight<td>-332<td>-237<td>-142<td> -47<td>  47<td> 142<td> 237<td> 332
+<tr><td>Mask  <td>0x01<td>0x02<td>0x04<td>0x08<td>0x10<td>0x20<td>0x40<td>0x80
+</table>
+ * count = 0<br>
+ * sum = 0<br>
+ * for i from 0 to 7 <br>
+ * if (data&Mask[i]) then count++ and sum = sum+Weight[i]<br>
+ * calculate <b>position</b> = sum/count
+ * @param  data is 8-bit result from line sensor
+ * @return position in 0.1mm relative to center of line
+ * @brief  Perform sensor integration.
+ * @note returns 333 if data is zero (off the line)
+ * */
+int32_t Reflectance_Position(uint8_t data);
+
+int32_t Reflectance_Diff(uint8_t data);
+
+uint8_t Reflectance_FSM(uint8_t data)
+/**
+
  * <b>Begin the process of reading the eight sensors</b>:<br>
   1) Turn on the 8 IR LEDs<br>
   2) Pulse the 8 sensors high for 10 us<br>

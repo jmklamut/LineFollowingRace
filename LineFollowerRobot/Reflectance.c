@@ -57,6 +57,8 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "Clock.h"
 
 //volatile uint8_t prev_count = 0;
+uint8_t previous_data = 0x00;
+
 
 // ------------Reflectance_Init------------
 // Initialize the GPIO pins associated with the QTR-8RC
@@ -214,6 +216,37 @@ uint8_t Reflectance_FSM(uint8_t data){
 
 }
 */
+
+uint8_t Reflectance_FSM(uint8_t data){
+    uint8_t prev_zero_count = 0;
+    uint8_t zero_count = 0;
+    int32_t result = 0x00;
+    int32_t i;
+    int32_t bit;
+    for (i=0; i<8; i++){
+        bit = (previous_data >> i) & 1;
+        if(bit == 0){
+            prev_zero_count++;
+        }
+    }
+    for (i=0; i<8; i++){
+        bit = (data >> i) & 1;
+        if(i == 0 && bit == 1){
+           result |= 0x02;
+        }
+        else if(i == 7 && bit == 1){
+            result |= 0x04;
+        }
+        else if(bit == 0){
+            zero_count++;
+        }
+    }
+    if(((8-zero_count) - (8-prev_zero_count)) == 0xFF || ((8-zero_count) - (8-prev_zero_count)) < 2 || (prev_zero_count > 7 && zero_count <= 7) || (prev_zero_count <= 7 && zero_count > 7)){
+        result |= 0x01;
+    }
+    previous_data = data;
+    return result;
+}
 
 // ------------Reflectance_Start------------
 // Begin the process of reading the eight sensors
